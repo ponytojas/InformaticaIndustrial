@@ -8,31 +8,6 @@ uint16_t numeroEvaluado = 3;
 int pos = 0;	
 
 
-int main()								
-	{
-		int i;											
-		int esPrimo = 1;						
-		primo[0] = 2;						
-		while (numeroEvaluado < NUM_MAX){	
-			limite = sqrt(numeroEvaluado)+1;		
-			for(i=1; i<=pos; i++){									
-				if (primo[i] > limite)								
-					break;
-				if(numeroEvaluado%primo[i] == 0){			
-					esPrimo = 0;												
-					break;
-				}				
-			}																			
-			if (esPrimo == 1){									 
-				pos++;														
-				primo[pos] = numeroEvaluado;	
-			}
-			esPrimo = 1;												
-			numeroEvaluado+=2;									
-		}																	
-	}
-	
-/*
 uint8_t esprimo(uint16_t numero){ 
 	int i; 
 limite = sqrt(numeroEvaluado)+1;		
@@ -62,4 +37,3 @@ int main (){
 	
 	}
 }
-*/
