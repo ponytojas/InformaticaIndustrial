@@ -2,6 +2,13 @@
 #include "lpc17xx.h"
 #include "math.h"
 
+void retrasoMsecond(uint16_t ms){
+	/*Funcion de retardo simple. Introducido un valor realiza un bucle de los mseg necesarios*/
+    unsigned int i,j;
+
+    for(i=0;i<ms;i++)
+        for(j=0;j<20000;j++);
+}
 
 void configurarPuertos(){ 
 	
@@ -65,7 +72,7 @@ uint16_t leerDato(){
 	valorInicial = (valorInicial<<1) + !(((LPC_GPIO0->FIOPIN>>24) & 0x01));
 	valorInicial = (valorInicial<<1) + !(((LPC_GPIO0->FIOPIN>>25) & 0x01));
 	valorInicial = (valorInicial<<1) + !(((LPC_GPIO0->FIOPIN>>26) & 0x01));
-
+	/*Si no hemos seleccionado ningún número devolvemos el 1 para evitar problemas al dividir más adelante*/
 	if (valorInicial == 0)
 	{
 		valorInicial = 1;
@@ -78,24 +85,58 @@ uint8_t esPrimo(uint16_t valor){
 	int limite = 0;
 	int i = 0;
 	limite = sqrt(valor) + 1;
-	
+	/*Añadimos las excepciones de 1 y 2 que son las que pueden causar problemas*/
 	if(valor == 1 || valor == 2){
 		return 1;
 	}
-	for (i = 2; i <= limite; i++){
+	
+	/*Como no almacenamos los números debemos debemos dividir entre todos los anteriores*/
+	/*Para optimizar código dividimos solo entre los impares, porque en el main hemos evitado todos los números pares*/
+	for (i = 3; i <= limite; i+=2){
 		if (valor % i == 0){
 			return 0;
-		}else{
-			return 1;
 		}
 	}
-	return 0;
+	return 1;
 }
 
-void muestraBinario(uint16_t valor){
+void muestraBinario(uint16_t numero){
 
-		int estado = valor&0x01;
+		int estado;
 	
+	
+estado = numero&0x01;
+LPC_GPIO0->FIOPIN |= (estado<<0);
+estado = ((numero&0x02)>>1);
+LPC_GPIO1->FIOPIN |= (estado<<1);
+estado = ((numero&0x04)>>2);
+LPC_GPIO1->FIOPIN |= (estado<<4);
+estado = ((numero&0x08)>>3);
+LPC_GPIO1->FIOPIN |= (estado<<8);
+estado = ((numero&0x010)>>4);
+LPC_GPIO1->FIOPIN |= (estado<<9);
+estado = ((numero&0x020)>>5);
+LPC_GPIO1->FIOPIN |= (estado<<10);
+estado = ((numero&0x040)>>6);
+LPC_GPIO1->FIOPIN |= (estado<<14);
+estado = ((numero&0x080)>>7);
+LPC_GPIO0->FIOPIN |= (estado<<2);
+estado = ((numero&0x0100)>>8);
+LPC_GPIO1->FIOPIN |= (estado<<16);
+estado = ((numero&0x0200)>>9);
+LPC_GPIO1->FIOPIN |= (estado<<17);
+estado = ((numero&0x0400)>>10);
+LPC_GPIO4->FIOPIN |= (estado<<29);
+estado = ((numero&0x0800)>>11);
+LPC_GPIO4->FIOPIN |= (estado<<28);
+estado = ((numero&0x01000)>>12);
+LPC_GPIO2->FIOPIN |= (estado<<6);
+estado = ((numero&0x02000)>>13);
+LPC_GPIO2->FIOPIN |= (estado<<7);
+estado = ((numero&0x04000)>>14);
+LPC_GPIO2->FIOPIN |= (estado<<8);
+estado = ((numero&0x08000)>>15);
+LPC_GPIO0->FIOPIN |= (estado<<19);
 
 	
 }
@@ -111,8 +152,12 @@ int main(){
 	limpiarPuertos();
 	do{
 		valor = leerDato();
-		for ( i = valor; i <= 65535; i++){
-			primo = esPrimo(valor);
+		if(valor != 2 && valor%2==0)
+		{
+			valor++; //Optimizamos código evitando los números pares que sabemos que no son primos, salvo el 2
+		}
+		for ( i = valor; i <= 65535; i+=2){
+			primo = esPrimo(i);
 			if (primo){
 				muestraBinario(valor);
 				
