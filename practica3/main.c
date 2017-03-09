@@ -22,7 +22,7 @@ void configurarPuertos(){
 	/*Seleccionamos los modos de entrada y salida de datos*/
 	LPC_GPIO0->FIODIR |= 0xFFFFFE03;
   LPC_GPIO1->FIODIR |= 0xFFFC38EC;
-  LPC_GPIO2->FIODIR |= 0xFFFFFF00;
+  LPC_GPIO2->FIODIR |= 0xFFFFFB00;
   //LPC_GPIO3->FIODIR |= 0xfbffffff;
   LPC_GPIO4->FIODIR |= 0xCFFFFFFF;
 	
@@ -101,47 +101,49 @@ uint8_t esPrimo(uint16_t valor){
 }
 
 void muestraBinario(uint16_t numero){
+	/*Aunque el manual del LPC1768 aconseja utilizar FIOPIN solo como RO, en este caso al no ser pines continuos del mismo puerto*/
+	/*Ej: P4.0 a P4.18, nos facilita y optimiza mejor el código utilizar FIOPIN como RW*/
+		int estado = 1; //Iniciamos estado a un valor para evitar elementos basura
+	/**/
+	estado = numero&0x01;
+	LPC_GPIO0->FIOPIN |= (estado<<3);
+	estado = ((numero&0x02)>>1);
+	LPC_GPIO0->FIOPIN |= (estado<<2);
+	estado = ((numero&0x04)>>2);
+	LPC_GPIO1->FIOPIN |= (estado<<0);
+	estado = ((numero&0x08)>>3);
+	LPC_GPIO1->FIOPIN |= (estado<<1);
+	estado = ((numero&0x010)>>4);
+	LPC_GPIO1->FIOPIN |= (estado<<4);
+	estado = ((numero&0x020)>>5);
+	LPC_GPIO1->FIOPIN |= (estado<<8);
+	estado = ((numero&0x040)>>6);
+	LPC_GPIO1->FIOPIN |= (estado<<9);
+	estado = ((numero&0x080)>>7);
+	LPC_GPIO1->FIOPIN |= (estado<<10);
+	estado = ((numero&0x0100)>>8);
+	LPC_GPIO1->FIOPIN |= (estado<<14);
+	estado = ((numero&0x0200)>>9);
+	LPC_GPIO1->FIOPIN |= (estado<<15);
+	estado = ((numero&0x0400)>>10);
+	LPC_GPIO1->FIOPIN |= (estado<<16);
+	estado = ((numero&0x0800)>>11);
+	LPC_GPIO4->FIOPIN |= (estado<<29);
+	estado = ((numero&0x01000)>>12);
+	LPC_GPIO4->FIOPIN |= (estado<<28);
+	estado = ((numero&0x02000)>>13);
+	LPC_GPIO0->FIOPIN |= (estado<<4);
+	estado = ((numero&0x04000)>>14);
+	LPC_GPIO0->FIOPIN |= (estado<<5);
+	estado = ((numero&0x08000)>>15);
+	LPC_GPIO0->FIOPIN |= (estado<<6);
+	estado = ((numero&0x010000)>>16);
+	LPC_GPIO0->FIOPIN |= (estado<<7);
+	estado = ((numero&0x020000)>>17);
+	LPC_GPIO0->FIOPIN |= (estado<<8);
+	
 
-		int estado;
-	
-	
-estado = numero&0x01;
-LPC_GPIO0->FIOPIN |= (estado<<0);
-estado = ((numero&0x02)>>1);
-LPC_GPIO1->FIOPIN |= (estado<<1);
-estado = ((numero&0x04)>>2);
-LPC_GPIO1->FIOPIN |= (estado<<4);
-estado = ((numero&0x08)>>3);
-LPC_GPIO1->FIOPIN |= (estado<<8);
-estado = ((numero&0x010)>>4);
-LPC_GPIO1->FIOPIN |= (estado<<9);
-estado = ((numero&0x020)>>5);
-LPC_GPIO1->FIOPIN |= (estado<<10);
-estado = ((numero&0x040)>>6);
-LPC_GPIO1->FIOPIN |= (estado<<14);
-estado = ((numero&0x080)>>7);
-LPC_GPIO0->FIOPIN |= (estado<<2);
-estado = ((numero&0x0100)>>8);
-LPC_GPIO1->FIOPIN |= (estado<<16);
-estado = ((numero&0x0200)>>9);
-LPC_GPIO1->FIOPIN |= (estado<<17);
-estado = ((numero&0x0400)>>10);
-LPC_GPIO4->FIOPIN |= (estado<<29);
-estado = ((numero&0x0800)>>11);
-LPC_GPIO4->FIOPIN |= (estado<<28);
-estado = ((numero&0x01000)>>12);
-LPC_GPIO2->FIOPIN |= (estado<<6);
-estado = ((numero&0x02000)>>13);
-LPC_GPIO2->FIOPIN |= (estado<<7);
-estado = ((numero&0x04000)>>14);
-LPC_GPIO2->FIOPIN |= (estado<<8);
-estado = ((numero&0x08000)>>15);
-LPC_GPIO0->FIOPIN |= (estado<<19);
-
-	
 }
-
-
 
 int main(){
 	int i = 0;
@@ -159,10 +161,17 @@ int main(){
 		for ( i = valor; i <= 65535; i+=2){
 			primo = esPrimo(i);
 			if (primo){
-				muestraBinario(valor);
 				
-				//Check ISP
-				//If ISP mostrarBin, sino mostrarBCD
+				/*if((LPC_GPIO2->FIOPIN>>10 & 0x01)){									//Si pulsamos SW2 Binario, si no BCD
+        mostrarBinario(i);
+      }
+      else{
+        mostrarBCD(i);
+      }*/
+				muestraBinario(i);
+				
+				//Check ISP DONE
+				//mostrarBinario
 				//mostrarBCD
 			}
 			
