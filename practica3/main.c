@@ -53,7 +53,6 @@ uint16_t leerDato(){
 	/*Ya que desde el switch obtenemos un valor 0 cuando lo activamos, debemos invertir el valor del pin
 		Para saber si está levantado o no*/
 	
-	
 	/*Leemos de izquierda a derecha en los pines de mayor a menor peso*/
 	/*[1.23][1.22][1.21][1.20][1.19][1.18][0.30][0.29][0.27][0.28][1.30][1.31][0.23][0.24][0.25][0.26]*/
 	valorInicial = !(((LPC_GPIO1->FIOPIN>>23) & 0x01));
@@ -89,7 +88,6 @@ uint8_t esPrimo(uint16_t valor){
 	if(valor == 1 || valor == 2){
 		return 1;
 	}
-	
 	/*Como no almacenamos los números debemos debemos dividir entre todos los anteriores*/
 	/*Para optimizar código dividimos solo entre los impares, porque en el main hemos evitado todos los números pares*/
 	for (i = 3; i <= limite; i+=2){
@@ -104,7 +102,7 @@ void muestraBinario(uint16_t numero){
 	/*Aunque el manual del LPC1768 aconseja utilizar FIOPIN solo como RO, en este caso al no ser pines continuos del mismo puerto*/
 	/*Ej: P4.0 a P4.18, nos facilita y optimiza mejor el código utilizar FIOPIN como RW*/
 		int estado = 1; //Iniciamos estado a un valor para evitar elementos basura
-	/**/
+	/*Vamos pasando por todos los números HEX del valor y encendiendo mediante OR cada uno de los leds que corresponda*/
 	estado = numero&0x01;
 	LPC_GPIO0->FIOPIN |= (estado<<3);
 	estado = ((numero&0x02)>>1);
@@ -141,14 +139,92 @@ void muestraBinario(uint16_t numero){
 	LPC_GPIO0->FIOPIN |= (estado<<7);
 	estado = ((numero&0x020000)>>17);
 	LPC_GPIO0->FIOPIN |= (estado<<8);
+}
+
+void muestraBCD(uint32_t numero){
+	int estado = 0;
+	estado = ((numero&0x010000000)>>28);
+LPC_GPIO0->FIOPIN |= (estado<<3);
 	
+estado = ((numero&0x020000000)>>29);
+LPC_GPIO0->FIOPIN |= (estado<<2);
+	
+estado = ((numero&0x040000000)>>30);
+LPC_GPIO1->FIOPIN |= (estado<<0);
+	
+estado = ((numero&0x080000000)>>31);
+LPC_GPIO1->FIOPIN |= (estado<<1);
+	
+estado = ((numero&0x01000000)>>24);
+LPC_GPIO1->FIOPIN |= (estado<<4);
+	
+estado = ((numero&0x02000000)>>25);
+LPC_GPIO1->FIOPIN |= (estado<<8);
+	
+estado = ((numero&0x04000000)>>26);
+LPC_GPIO1->FIOPIN |= (estado<<9);
+
+estado = ((numero&0x08000000)>>27);
+LPC_GPIO1->FIOPIN |= (estado<<10);
+
+estado = ((numero&0x0100000)>>20);
+LPC_GPIO1->FIOPIN |= (estado<<14);
+
+estado = ((numero&0x0200000)>>21);
+LPC_GPIO1->FIOPIN |= (estado<<15);
+
+estado = ((numero&0x0400000)>>22);
+LPC_GPIO1->FIOPIN |= (estado<<16);
+
+estado = ((numero&0x0800000)>>23);
+LPC_GPIO4->FIOPIN |= (estado<<29);
+
+estado = ((numero&0x010000)>>16);
+LPC_GPIO4->FIOPIN |= (estado<<28);
+
+estado = ((numero&0x020000)>>17);
+LPC_GPIO0->FIOPIN |= (estado<<4);
+
+estado = ((numero&0x040000)>>18);
+LPC_GPIO0->FIOPIN |= (estado<<5);
+
+estado = ((numero&0x080000)>>19);
+LPC_GPIO0->FIOPIN |= (estado<<6);
+
+estado = ((numero&0x01000)>>12);
+LPC_GPIO0->FIOPIN |= (estado<<7);
+
+estado = ((numero&0x02000)>>13);
+LPC_GPIO0->FIOPIN |= (estado<<8);
 
 }
+
+
+uint32_t valorBinToBCD(uint16_t valorBin){
+	uint32_t resultado = 0;
+	while (valorBin > 0) {
+   resultado <<= 4;
+   resultado |= valorBin % 10;
+   valorBin /= 10;
+	}
+	return resultado;
+}
+
+uint8_t isp(){
+	/*Comprobamos el pin 2.10 ISP*/
+	if((LPC_GPIO2->FIOPIN>>10 & 0x01)){	
+	return 1;
+	}
+	return 0;
+}
+
 
 int main(){
 	int i = 0;
 	uint8_t primo = 0;
 	uint16_t valor;
+	uint32_t valorBCD;
+	uint8_t pulsado = 0;
 	
 	configurarPuertos();
 	limpiarPuertos();
@@ -161,24 +237,17 @@ int main(){
 		for ( i = valor; i <= 65535; i+=2){
 			primo = esPrimo(i);
 			if (primo){
-				
-				/*if((LPC_GPIO2->FIOPIN>>10 & 0x01)){									//Si pulsamos SW2 Binario, si no BCD
-        mostrarBinario(i);
+				if ((pulsado = isp())){									//Si pulsamos SW2 Binario, si no BCD
+        muestraBinario(i);
       }
       else{
-        mostrarBCD(i);
-      }*/
-				muestraBinario(i);
-				
+				valorBCD = valorBinToBCD(i);
+        muestraBCD(valorBCD);
+      }
 				//Check ISP DONE
 				//mostrarBinario
 				//mostrarBCD
 			}
-			
 		}
-	
-	}while(1);
-	
-	
+	}while(1);	
 }
-
