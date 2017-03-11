@@ -26,11 +26,16 @@ void configurarPuertos(){
   LPC_PINCON->PINSEL4 = 0x00000000;
 	
 	/*Seleccionamos los modos de entrada y salida de datos*/
-	LPC_GPIO0->FIODIR |= 0xFFFFFE03;
-  LPC_GPIO1->FIODIR |= 0xFFFC38EC;
-  LPC_GPIO2->FIODIR |= 0xFFFFFB00;
-  //LPC_GPIO3->FIODIR |= 0xfbffffff;
-  LPC_GPIO4->FIODIR |= 0xCFFFFFFF;
+	//LPC_GPIO0->FIODIR |= 0x807FFEFF;
+	LPC_GPIO0->FIODIR |= 0x7F800100;
+  //LPC_GPIO1->FIODIR |= 0x3F03FFFF;
+	LPC_GPIO1->FIODIR |= 0xC0FC0000;
+  //LPC_GPIO2->FIODIR |= 0xFFFFFBFF;
+	LPC_GPIO2->FIODIR |= ~(0xFFFFFBFF);
+  //LPC_GPIO3->FIODIR |= 0xffffffff;
+	LPC_GPIO3->FIODIR |= (0xffffffff);
+  //LPC_GPIO4->FIODIR |= 0xFFFFFFFF;
+	LPC_GPIO4->FIODIR |= ~(0xFFFFFFFF);
 }
 	
 void limpiarPuertos(){
@@ -49,22 +54,22 @@ uint16_t leerDato(){
 		Para saber si está levantado o no*/
 	/*Leemos de izquierda a derecha en los pines de mayor a menor peso*/
 	/*[1.23][1.22][1.21][1.20][1.19][1.18][0.30][0.29][0.27][0.28][1.30][1.31][0.23][0.24][0.25][0.26]*/
-	valorInicial = !(((LPC_GPIO1->FIOPIN>>23) & 0x01));
-	valorInicial = (valorInicial<<1) + !(((LPC_GPIO1->FIOPIN>>22) & 0x01));
-	valorInicial = (valorInicial<<1) + !(((LPC_GPIO1->FIOPIN>>21) & 0x01));
-	valorInicial = (valorInicial<<1) + !(((LPC_GPIO1->FIOPIN>>20) & 0x01));
-	valorInicial = (valorInicial<<1) + !(((LPC_GPIO1->FIOPIN>>19) & 0x01));
-	valorInicial = (valorInicial<<1) + !(((LPC_GPIO1->FIOPIN>>18) & 0x01));
-	valorInicial = (valorInicial<<1) + !(((LPC_GPIO0->FIOPIN>>30) & 0x01));
-	valorInicial = (valorInicial<<1) + !(((LPC_GPIO0->FIOPIN>>29) & 0x01));
-	valorInicial = (valorInicial<<1) + !(((LPC_GPIO0->FIOPIN>>27) & 0x01));
-	valorInicial = (valorInicial<<1) + !(((LPC_GPIO0->FIOPIN>>28) & 0x01));
-	valorInicial = (valorInicial<<1) + !(((LPC_GPIO1->FIOPIN>>30) & 0x01));
-	valorInicial = (valorInicial<<1) + !(((LPC_GPIO1->FIOPIN>>31) & 0x01));
-	valorInicial = (valorInicial<<1) + !(((LPC_GPIO0->FIOPIN>>23) & 0x01));
-	valorInicial = (valorInicial<<1) + !(((LPC_GPIO0->FIOPIN>>24) & 0x01));
-	valorInicial = (valorInicial<<1) + !(((LPC_GPIO0->FIOPIN>>25) & 0x01));
-	valorInicial = (valorInicial<<1) + !(((LPC_GPIO0->FIOPIN>>26) & 0x01));
+	valorInicial = !(((LPC_GPIO1->FIOPIN>>23) & 0x01));	//15
+	valorInicial = (valorInicial<<1) + !(((LPC_GPIO1->FIOPIN>>22) & 0x01));	//14
+	valorInicial = (valorInicial<<1) + !(((LPC_GPIO1->FIOPIN>>21) & 0x01));	//13
+	valorInicial = (valorInicial<<1) + !(((LPC_GPIO1->FIOPIN>>20) & 0x01));	//12
+	valorInicial = (valorInicial<<1) + !(((LPC_GPIO1->FIOPIN>>19) & 0x01));	//11
+	valorInicial = (valorInicial<<1) + !(((LPC_GPIO1->FIOPIN>>18) & 0x01));	//10
+	valorInicial = (valorInicial<<1) + !(((LPC_GPIO0->FIOPIN>>30) & 0x01));	//9
+	valorInicial = (valorInicial<<1) + !(((LPC_GPIO0->FIOPIN>>29) & 0x01));	//8
+	valorInicial = (valorInicial<<1) + !(((LPC_GPIO0->FIOPIN>>27) & 0x01));	//7
+	valorInicial = (valorInicial<<1) + !(((LPC_GPIO0->FIOPIN>>28) & 0x01));	//6
+	valorInicial = (valorInicial<<1) + !(((LPC_GPIO1->FIOPIN>>30) & 0x01));	//5
+	valorInicial = (valorInicial<<1) + !(((LPC_GPIO1->FIOPIN>>31) & 0x01));	//4
+	valorInicial = (valorInicial<<1) + !(((LPC_GPIO0->FIOPIN>>23) & 0x01));	//3
+	valorInicial = (valorInicial<<1) + !(((LPC_GPIO0->FIOPIN>>24) & 0x01));	//2
+	valorInicial = (valorInicial<<1) + !(((LPC_GPIO0->FIOPIN>>25) & 0x01));	//1
+	valorInicial = (valorInicial<<1) + !(((LPC_GPIO0->FIOPIN>>26) & 0x01));	//0
 	/*Si no hemos seleccionado ningún número devolvemos el 1 para evitar problemas al dividir más adelante*/
 	if (valorInicial == 0){
 		valorInicial = 1;
@@ -197,7 +202,7 @@ void display (uint8_t digito){
 	/*Ponemos todos los pines del display a 1 para apagarlo*/
 	LPC_GPIO2 -> FIOSET = ~(0xFFFFFF00);
 	/*Este delay es necesario para evitar problemas con el display una vez apagado, de otra forma a veces mantiene elementos basura*/
-	delay(50);
+	//delay(50);
 	switch (digito){ //Un switch tipo en función del valor que le pasemos
 		/*Al ser de ánodo común es necesario mandar una señal de 0 por los pines que correspondan*/
 		case 0:
@@ -256,11 +261,35 @@ void displayDigito(uint16_t numero, uint8_t digito){
 	uint8_t aux;
 	int i;
 	/*Dividimos el número en dígitos hasta llegar al dígito que queremos mostrar*/
-	for (i = 0; i <= digito; i++){
+	for (i = 0; i <= digito-1; i++){
 		aux = numero %10;
 		numero = numero /10;
-	}
+	} 
 	display(aux);
+}
+void led2(){
+	/*Comprobamos si el pin tiene un 1 (led encendido) o 0 (led apagado) y realizamos la tarea inversa*/
+	if((LPC_GPIO3->FIOPIN>>25 & 0x01)){
+		 LPC_GPIO3->FIOCLR = 0x02000000; 
+	}else{
+		LPC_GPIO3->FIOSET = 0x02000000;  
+	}
+}
+
+void led3(uint8_t bit, uint16_t numero){
+	uint16_t aux = 0x01;
+	uint16_t i;
+	LPC_GPIO3->FIOCLR = 0x04000000; //Apagamos el led siempre para que haya constancia de que variamos
+	/*Con una variable de la forma 0x01 en 16 bit, desplazamos el 1 hasta el bit que toque comprobar*/
+	for (i = 0; i <= bit-1; i++){
+		aux = aux << 1;
+	}
+	/*Una vez hemos desplazado hasta el bit correspondiente, comprobamos si le multiplicación lógcia (AND &)
+	con el número es diferente de 0, en cuyo caso debemos encender el led*/
+	aux &= numero;
+	if (aux != 0){
+		LPC_GPIO3->FIOSET = 0x04000000;
+	}
 }
 
 int main(){
@@ -269,7 +298,10 @@ int main(){
 	uint16_t valor;
 	uint32_t valorBCD;
 	uint8_t pulsado = 0;
-	uint8_t auxSeg = 0;
+	uint8_t auxSeg;
+	uint8_t auxLed;
+	uint8_t bit = 15;
+	
 	
 	configurarPuertos();
 	limpiarPuertos();
@@ -288,11 +320,18 @@ int main(){
 				valorBCD = valorBinToBCD(i);
         muestraBCD(valorBCD);
 				}
-			for (auxSeg = 5; auxSeg <= 1; auxSeg--)
+			for (auxSeg = 5; auxSeg >= 1; auxSeg--)
 				{
 					displayDigito(i, auxSeg);
-					delay(400);
+				//	delay(400);
 				}
+				for (auxLed = 0; auxLed <= 15; auxLed++){
+					led2();
+					led3(bit, i);
+					bit--; //desplazamos el bit que queremos mostrar
+					//delay(125);
+				}
+				bit = 15; //reiniciamos la posición para comprobar el siguiente número
 			}
 		}
 	}while(1);	
