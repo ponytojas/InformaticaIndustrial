@@ -25,17 +25,13 @@ void configurarPuertos(){
   LPC_PINCON->PINSEL3 = 0x00000000;
   LPC_PINCON->PINSEL4 = 0x00000000;
 	
+	
 	/*Seleccionamos los modos de entrada y salida de datos*/
-	//LPC_GPIO0->FIODIR |= 0x807FFEFF;
-	LPC_GPIO0->FIODIR |= 0x7F800100;
-  //LPC_GPIO1->FIODIR |= 0x3F03FFFF;
-	LPC_GPIO1->FIODIR |= 0xC0FC0000;
-  //LPC_GPIO2->FIODIR |= 0xFFFFFBFF;
-	LPC_GPIO2->FIODIR |= ~(0xFFFFFBFF);
-  //LPC_GPIO3->FIODIR |= 0xffffffff;
-	LPC_GPIO3->FIODIR |= (0xffffffff);
-  //LPC_GPIO4->FIODIR |= 0xFFFFFFFF;
-	LPC_GPIO4->FIODIR |= ~(0xFFFFFFFF);
+	LPC_GPIO0->FIODIR |= 0x000001FC;
+	LPC_GPIO1->FIODIR |= 0x0003C713;
+	LPC_GPIO2->FIODIR |= 0x000000FF;
+	LPC_GPIO3->FIODIR |= 0xffffffff;
+	LPC_GPIO4->FIODIR |= 0x30000000;
 }
 	
 void limpiarPuertos(){
@@ -45,6 +41,9 @@ void limpiarPuertos(){
   LPC_GPIO2->FIOCLR = 0xffffffff;
   LPC_GPIO3->FIOCLR = 0xffffffff;
   LPC_GPIO4->FIOCLR = 0xffffffff;
+	LPC_GPIO3->FIOSET = 0x04000000;
+	LPC_GPIO3->FIOSET = 0x02000000; 
+	LPC_GPIO2 -> FIOSET = ~(0xFFFFFF00);
 }
 
 uint16_t leerDato(){
@@ -80,11 +79,11 @@ uint16_t leerDato(){
 uint8_t esPrimo(uint16_t valor){
 	int limite = 0;
 	int i = 0;
-	limite = sqrt(valor) + 1;
 	/*Añadimos las excepciones de 1 y 2 que son las que pueden causar problemas*/
 	if(valor == 1 || valor == 2){
 		return 1;
 	}
+	limite = sqrt(valor) + 1;
 	/*Como no almacenamos los números debemos debemos dividir entre todos los anteriores*/
 	/*Para optimizar código dividimos solo entre los impares, porque en el main hemos evitado todos los números pares*/
 	for (i = 3; i <= limite; i+=2){
@@ -101,6 +100,9 @@ void muestraBinario(uint16_t numero){
 		int estado = 1; //Iniciamos estado a un valor para evitar elementos basura
 	/*Vamos pasando por todos los números HEX del valor y encendiendo mediante OR cada uno de los leds que corresponda*/
 	estado = numero&0x01;
+	LPC_GPIO0->FIOCLR |= 0x1FC;
+  LPC_GPIO1->FIOCLR |= 0x3C713;
+  LPC_GPIO4->FIOCLR3 |= 0x30;
 	LPC_GPIO0->FIOPIN |= (estado<<3);
 	estado = ((numero&0x02)>>1);
 	LPC_GPIO0->FIOPIN |= (estado<<2);
@@ -141,6 +143,9 @@ void muestraBinario(uint16_t numero){
 void muestraBCD(uint32_t numero){
 	/*Realizamos el encendido de los LEDs igual que hemos realizado en Binario una vez el número lo hemos convertido a BCD*/
 	int estado = 0;
+	LPC_GPIO0->FIOCLR |= 0x1FC;
+  LPC_GPIO1->FIOCLR |= 0x3C713;
+  LPC_GPIO4->FIOCLR3 |= 0x30;
 	estado = ((numero&0x010000000)>>28);
 	LPC_GPIO0->FIOPIN |= (estado<<3);
 	estado = ((numero&0x020000000)>>29);
@@ -182,27 +187,29 @@ void muestraBCD(uint32_t numero){
 uint32_t valorBinToBCD(uint16_t valorBin){
 	/*Dividimos en secciones de 4 números y dividimos entre 10 para generar el número en BCD*/
 	uint32_t resultado = 0;
-	while (valorBin > 0) {
-   resultado <<= 4;
-   resultado |= valorBin % 10;
-   valorBin /= 10;
-	}
-	return resultado;
+  int i = 0;
+  for(i=1;i<=8;i++){
+    resultado<<=4;
+    resultado|=(valorBin%10);
+    valorBin/=10;
+  }
+  return resultado;
 }
 
 uint8_t isp(){
 	/*Comprobamos el pin 2.10 ISP*/
-	if((LPC_GPIO2->FIOPIN>>10 & 0x01)){	
+		if((LPC_GPIO2->FIOPIN>>10 & 0x01)){	
+		return 0;
+		}else{
 	return 1;
 	}
-	return 0;
-}
+		}
 
 void display (uint8_t digito){
 	/*Ponemos todos los pines del display a 1 para apagarlo*/
 	LPC_GPIO2 -> FIOSET = ~(0xFFFFFF00);
 	/*Este delay es necesario para evitar problemas con el display una vez apagado, de otra forma a veces mantiene elementos basura*/
-	//delay(50);
+	delay(50);
 	switch (digito){ //Un switch tipo en función del valor que le pasemos
 		/*Al ser de ánodo común es necesario mandar una señal de 0 por los pines que correspondan*/
 		case 0:
@@ -232,7 +239,7 @@ void display (uint8_t digito){
 		
 		case 5: 
 			/* 5 // A + C + D + F + G */
-		LPC_GPIO2->FIOCLR = 0x0000003D;
+		LPC_GPIO2->FIOCLR = 0x0000006D;
 		break;
 		
 		case 6:
@@ -260,6 +267,7 @@ void display (uint8_t digito){
 void displayDigito(uint16_t numero, uint8_t digito){
 	uint8_t aux;
 	int i;
+	LPC_GPIO2 -> FIOSET = ~(0xFFFFFF00);
 	/*Dividimos el número en dígitos hasta llegar al dígito que queremos mostrar*/
 	for (i = 0; i <= digito-1; i++){
 		aux = numero %10;
@@ -279,7 +287,7 @@ void led2(){
 void led3(uint8_t bit, uint16_t numero){
 	uint16_t aux = 0x01;
 	uint16_t i;
-	LPC_GPIO3->FIOCLR = 0x04000000; //Apagamos el led siempre para que haya constancia de que variamos
+	LPC_GPIO3->FIOSET = 0x04000000; //Apagamos el led siempre para que haya constancia de que variamos
 	/*Con una variable de la forma 0x01 en 16 bit, desplazamos el 1 hasta el bit que toque comprobar*/
 	for (i = 0; i <= bit-1; i++){
 		aux = aux << 1;
@@ -288,7 +296,7 @@ void led3(uint8_t bit, uint16_t numero){
 	con el número es diferente de 0, en cuyo caso debemos encender el led*/
 	aux &= numero;
 	if (aux != 0){
-		LPC_GPIO3->FIOSET = 0x04000000;
+		LPC_GPIO3->FIOCLR = 0x04000000;
 	}
 }
 
@@ -313,7 +321,8 @@ int main(){
 		for ( i = valor; i <= 65535; i+=2){
 			primo = esPrimo(i);
 			if (primo){
-				if ((pulsado = isp())){ //Si pulsamos SW2 Binario, si no BCD
+				pulsado = isp();
+				if (pulsado == 1 ){ //Si pulsamos SW2 Binario, si no BCD
         muestraBinario(i);
       }
       else{
@@ -323,15 +332,22 @@ int main(){
 			for (auxSeg = 5; auxSeg >= 1; auxSeg--)
 				{
 					displayDigito(i, auxSeg);
-				//	delay(400);
+					delay(400);
 				}
 				for (auxLed = 0; auxLed <= 15; auxLed++){
 					led2();
 					led3(bit, i);
 					bit--; //desplazamos el bit que queremos mostrar
-					//delay(125);
+					delay(125);
 				}
 				bit = 15; //reiniciamos la posición para comprobar el siguiente número
+			}
+			LPC_GPIO2->FIOCLR = 0xffffffff;
+			if (i == 1){
+			i--;
+			}
+			if (i ==2){
+			i--;
 			}
 		}
 	}while(1);	
